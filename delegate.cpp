@@ -15,7 +15,7 @@ QWidget * Delegate::createEditor(QWidget *parent, const QStyleOptionViewItem &op
 
 void Delegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
-    if(index.data() == 1)
+    if(index.data() == true)
         painter->fillRect(option.rect, QColor(250,250,3));
     else
         painter->fillRect(option.rect, QColor(0,0,0));

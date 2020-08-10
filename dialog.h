@@ -5,8 +5,9 @@
 #include <QtCore>
 #include <QtGui>
 #include <QDebug>
+#include <chrono>
 #include "delegate.h"
-#include "myThread.h"
+#include "grid.h"
 QT_BEGIN_NAMESPACE
 namespace Ui { class Dialog; }
 QT_END_NAMESPACE
@@ -41,39 +42,29 @@ private slots:
 
     void on_tableView_pressed(const QModelIndex &index);
 
-public slots:
-    void onMakeStep();
-
 private:
-
-    myThread *mThread;
 
     Ui::Dialog *ui;
     QStandardItemModel *model;
     Delegate *myDelegate;
-    QList<QModelIndex> aliveCells;
-
-    QList<int> const checkNeighbors(QModelIndex &index);
-
-    QList<QModelIndex> const findLiveCells();
-
-    void killCells(QList<QModelIndex>);
-
-    void resurrectCells(QList<QModelIndex>);
-
-    int countAliveNeighbors(QModelIndex);
-
-    void setUpVisibility(int margin);
-
-    void makeStep();
+    std::mutex mutex;
+    bool isStopped;
+    unsigned int latency;
+    grid g;
 
     void setUpCellSize(int);
 
-    void setUpModel();
+    void setUpModel(int w, int h);
 
     void setUpGridSize();
 
     void keyPressEvent(QKeyEvent *event);
+
+    void passGridToLogic();
+
+    void getGridFromLogid();
+
+    void run();
 
 };
 #endif // DIALOG_H

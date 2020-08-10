@@ -17,15 +17,17 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     delegate.cpp \
+    grid.cpp \
     main.cpp \
     dialog.cpp \
-    myThread.cpp \
-    testgui.cpp
+    testgui.cpp \
+    unittests.cpp
 
 HEADERS += \
+    cellStruct.h \
     delegate.h \
     dialog.h \
-    myThread.h
+    grid.h
 
 FORMS += \
     dialog.ui
