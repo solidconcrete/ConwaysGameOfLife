@@ -12,24 +12,22 @@ Dialog::Dialog(QWidget *parent)
     , ui(new Ui::Dialog)
 {
     ui->setupUi(this);
-    g = grid();
+    g = grid(5, 5);
     isStopped = true;
+    latency = 500;
 
-
-    qRegisterMetaType<QVector<int>>("aaa");
+    qRegisterMetaType<QVector<int>>("QVectorMetat");
 
     std::thread th1 (&Dialog::run, this);
     th1.detach();
 
-    model = new QStandardItemModel(10, 10, this);
-    setUpModel(10, 10);
+    model = new QStandardItemModel(5, 5, this);
+    setUpModel();
     ui->tableView->setModel(model);
     myDelegate = new Delegate(this);
     ui->tableView->setItemDelegate(myDelegate);
     ui->tableView->setMouseTracking(true);
 
-//    mThread = new myThread(this);
-//    connect(mThread, SIGNAL(makeStep()), this, SLOT(onMakeStep()));
 }
 
 Dialog::~Dialog()
@@ -41,7 +39,6 @@ Dialog::~Dialog()
 void Dialog::run()
 {
     bool localIsStopped = isStopped;
-    int i = 0;
     while(1)
     {
         if (!localIsStopped)
@@ -50,11 +47,7 @@ void Dialog::run()
             g.makeStep();
             getGridFromLogid();
             mutex.unlock();
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(50));
-
-
-
+            std::this_thread::sleep_for(std::chrono::milliseconds(latency));
         }
         localIsStopped = isStopped;
     }
@@ -63,6 +56,10 @@ void Dialog::run()
 //set up grid size
 void Dialog::on_SizePushButton_clicked()
 {
+    if (!isStopped)
+    {
+        return;
+    }
     QString labelText = "Width: ";
     int width = ui->XspinBox->value();
     int height = ui->YspinBox->value();
@@ -74,16 +71,17 @@ void Dialog::on_SizePushButton_clicked()
     model->setColumnCount(width);
     model->setRowCount(height);
 
-    setUpModel(width, height);
+    g.setSize(width, height);
+    setUpModel();
 
     this->setFocus();
 
 }
 
 //sets up a model so that newly added cells are marked as dead, but without killing living cells
-void Dialog::setUpModel(int w, int h)
+void Dialog::setUpModel()
 {
-    g.setSize(w, h);
+    getGridFromLogid();
     for (int col = 0; col < model->columnCount(); col++)
     {
         for (int row = 0; row < model->rowCount(); row++)
@@ -126,7 +124,7 @@ void Dialog::on_pauseButton_clicked()
 
 void Dialog::on_speedSlider_valueChanged(int value)
 {
-    latency = value;
+    latency = 1100 - value;
 }
 
 void Dialog::on_cellSizeSlider_valueChanged(int value)
@@ -136,7 +134,7 @@ void Dialog::on_cellSizeSlider_valueChanged(int value)
 
 void Dialog::keyPressEvent(QKeyEvent *event)
 {
-    if (event->key() == Qt::Key_Space)
+    if (event->key() == Qt::Key_Space && isStopped)
     {
         g.makeStep();
         getGridFromLogid();
@@ -158,7 +156,7 @@ void Dialog::keyPressEvent(QKeyEvent *event)
 
 void Dialog::on_clearButton_clicked()
 {
-    g.setSize(model->columnCount(), model->rowCount());
+    g.setEmpty();
     getGridFromLogid();
 
     this->setFocus();
@@ -184,12 +182,12 @@ void Dialog::getGridFromLogid()
 void Dialog::on_tableView_entered(const QModelIndex &index)
 {
 //    QApplication::keyboardModifiers().testFlag(Qt::ControlModifier
-    if (QApplication::mouseButtons().testFlag(Qt::LeftButton))
+    if (QApplication::mouseButtons().testFlag(Qt::LeftButton) && isStopped)
     {
         model->setData(index, 1);
         g.setCellAlive(index.column(), index.row());
     }
-    if (QApplication::mouseButtons().testFlag(Qt::RightButton))
+    if (QApplication::mouseButtons().testFlag(Qt::RightButton) && isStopped)
     {
         model->setData(index, 0);
         g.setCellDead(index.column(), index.row());

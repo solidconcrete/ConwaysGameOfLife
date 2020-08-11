@@ -54,7 +54,7 @@ private:
 
     void setUpCellSize(int);
 
-    void setUpModel(int w, int h);
+    void setUpModel();
 
     void setUpGridSize();
 

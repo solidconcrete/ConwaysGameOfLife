@@ -2,6 +2,7 @@
 #include <QDebug>
 #include <thread>
 #include <chrono>
+#include <vector>
 
 grid::grid(int w, int h)
 {
@@ -18,51 +19,59 @@ grid::grid()
 {
 
 }
-void grid::setSize(int w, int h)
+void grid::setSize(int newWidth, int newHeight)
 {
-    if (w < 0 || h < 0)
+    QDebug deb = qDebug();
+    if (newWidth < 0 || newHeight < 0)
     {
         throw "Negative coordinates condition!";
     }
-    this->width = w;
-    this->height = h;
 
+    int widthToCheck;
+    int heightToCheck;
+
+    if (newWidth < width)
+    {
+        widthToCheck = newWidth;
+    }
+    else widthToCheck = width;
+    if (newHeight < height)
+    {
+        heightToCheck = newHeight;
+    }
+    else heightToCheck = height;
+
+    int oldWidth = width;
+
+    std::vector<cell> oldMap = cellMap;
+    cellMap.assign(newWidth * newHeight, cell(0,0));
+    this->width = newWidth;
+    this->height = newHeight;
+
+    for(int row = 0; row < heightToCheck; row ++)
+    {
+        for (int col = 0; col < widthToCheck; col ++)
+        {
+            if (checkState(col, row, oldMap, oldWidth))
+            {
+                setCellAlive(col, row);
+            }
+        }
+    }
+}
+
+void grid::setEmpty()
+{
     cellMap.assign(width * height, cell(0, 0));
 }
-void grid::loadDataToGrid(std::vector<cell> cells)
-{
 
-}
-
-//void grid::run()
-//{
-//    while(1)
-//    {
-//        if (!isStopped)
-//        {
-//            for( int i = 0; i < 100; i++)
-//            {
-//                qDebug() << "thread running, $ cycle" << i;
-
-//                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-//            }
-//            isStopped = true;
-//        }
-//    }
-//}
-
-void grid::startThread()
-{
-    isStopped = false;
-}
-
-bool grid::checkState(int x, int y)
+bool grid::checkState(int x, int y, std::vector<cell> map, int w)
 {
     if (x > width || y > height || x < 0 || y < 0)
     {
         throw "Such coordinates don't exist!";
     }
-    return cellMap.at(y * width + x).isAlive;
+    return map.at(y * w + x).isAlive;
 }
 void grid::setCellAlive(int x, int y)
 {

@@ -11,15 +11,15 @@ public:
     grid(int w, int h);
     grid();
     void setSize(int w, int h);
-    bool checkState(int x, int y);
+    bool checkState(int x, int y, std::vector<cell> map, int w);
     void setCellAlive(int x, int y);
     void setCellDead(int x, int y);
     std::vector<cell>  getGrid();
     void makeStep();
     void decideCellFate(int x, int y);
-    void loadDataToGrid(std::vector<cell> cells);
     void run();
     void startThread();
+    void setEmpty();
 
 private:
 
