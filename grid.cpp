@@ -13,66 +13,21 @@ grid::grid(int w, int h)
     this->width = w;
     this->height = h;
 
-    cellMap.assign(width * height, cell(0, 0));
+    cellMap.assign(width * height, cell());
 }
 grid::grid()
 {
 
 }
-void grid::setSize(int newWidth, int newHeight)
-{
-    QDebug deb = qDebug();
-    if (newWidth < 0 || newHeight < 0)
-    {
-        throw "Negative coordinates condition!";
-    }
-
-    int widthToCheck;
-    int heightToCheck;
-
-    if (newWidth < width)
-    {
-        widthToCheck = newWidth;
-    }
-    else widthToCheck = width;
-    if (newHeight < height)
-    {
-        heightToCheck = newHeight;
-    }
-    else heightToCheck = height;
-
-    int oldWidth = width;
-
-    std::vector<cell> oldMap = cellMap;
-    cellMap.assign(newWidth * newHeight, cell(0,0));
-    this->width = newWidth;
-    this->height = newHeight;
-
-    for(int row = 0; row < heightToCheck; row ++)
-    {
-        for (int col = 0; col < widthToCheck; col ++)
-        {
-            if (checkState(col, row, oldMap, oldWidth))
-            {
-                setCellAlive(col, row);
-            }
-        }
-    }
-}
-
 void grid::setEmpty()
 {
-    cellMap.assign(width * height, cell(0, 0));
+    cellMap.assign(width * height, cell());
+}
+std::vector<cell> grid::getGrid()
+{
+    return cellMap;
 }
 
-bool grid::checkState(int x, int y, std::vector<cell> map, int w)
-{
-    if (x > width || y > height || x < 0 || y < 0)
-    {
-        throw "Such coordinates don't exist!";
-    }
-    return map.at(y * w + x).isAlive;
-}
 void grid::setCellAlive(int x, int y)
 {
     unsigned int cellCoordinates = y * width + x;
@@ -85,8 +40,6 @@ void grid::setCellAlive(int x, int y)
     {
         cellMap[cellCoordinates].isAlive = 1;
     }
-
-
 
     int leftNeighbor, rightNeighbor, aboveNeighbor, belowNeighbor;
     if (x == 0)
@@ -106,7 +59,8 @@ void grid::setCellAlive(int x, int y)
 
     if (y == 0)
     {
-        aboveNeighbor = height * (width - 1);
+//        aboveNeighbor = height * (width - 1);
+        aboveNeighbor = height * width - (width - x) - x;
     }
     else
     {
@@ -136,6 +90,7 @@ void grid::setCellAlive(int x, int y)
 
 
 }
+
 void grid::setCellDead(int x, int y)
 {
     if (x > width || y > height || x < 0 || y < 0)
@@ -169,11 +124,12 @@ void grid::setCellDead(int x, int y)
 
     if (y == 0)
     {
-        aboveNeighbor = height * (width - 1);
+//        aboveNeighbor = height * (width - 1);
+        aboveNeighbor = height * width - (width - x) - x;
     }
     else
     {
-        aboveNeighbor = -width;
+        aboveNeighbor = - width;
     }
 
     if (y == height - 1)
@@ -200,30 +156,81 @@ void grid::setCellDead(int x, int y)
 
 void grid::makeStep()
 {
+    bool cellFate;
     tempCellMap = cellMap;
     for (int x = 0; x < width; x++)
     {
         for (int y = 0; y < height; y++)
         {
-            decideCellFate(x, y);
+            cellFate = decideCellFate(tempCellMap.at(y * width + x));
+
+            //if cell is alive and should be dead - kill it
+            if (cellFate && !tempCellMap.at(y * width + x).isAlive)
+            {
+                setCellAlive(x, y);
+            }
+            //if cell is dead and should be alive - resurrect it
+            if (!cellFate && tempCellMap.at(y * width + x).isAlive)
+            {
+                setCellDead(x, y);
+            }
+
         }
     }
 }
 
-void grid::decideCellFate(int x, int y)
+//decide whether the cell should be alive or dead
+bool grid::decideCellFate(cell cellToCheck)
 {
-    int index = y * width + x;
-    if ((!tempCellMap.at(index).isAlive && tempCellMap.at(index).aliveNeighbors == 3))
+    if ((!cellToCheck.isAlive && cellToCheck.aliveNeighbors == 3))
     {
-        setCellAlive(x, y);
+        return true;
     }
-    if (tempCellMap.at(index).isAlive && (tempCellMap.at(index).aliveNeighbors < 2 || tempCellMap.at(index).aliveNeighbors > 3))
+
+    if (cellToCheck.isAlive && (cellToCheck.aliveNeighbors == 2 || cellToCheck.aliveNeighbors == 3))
     {
-        setCellDead(x, y);
+        return true;
     }
+    return false;
 }
 
-std::vector<cell> grid::getGrid()
+void grid::changeSize(int newWidth, int newHeight)
 {
-    return cellMap;
+    QDebug deb = qDebug();
+    if (newWidth < 0 || newHeight < 0)
+    {
+        throw "Negative coordinates condition!";
+    }
+
+    int widthToCheck;
+    int heightToCheck;
+
+    if (newWidth < width)
+    {
+        widthToCheck = newWidth;
+    }
+    else widthToCheck = width;
+    if (newHeight < height)
+    {
+        heightToCheck = newHeight;
+    }
+    else heightToCheck = height;
+
+    int oldWidth = width;
+
+    std::vector<cell> oldMap = cellMap;
+    cellMap.assign(newWidth * newHeight, cell());
+    this->width = newWidth;
+    this->height = newHeight;
+
+    for(int row = 0; row < heightToCheck; row ++)
+    {
+        for (int col = 0; col < widthToCheck; col ++)
+        {
+            if (oldMap[row * oldWidth + col].isAlive)
+            {
+                setCellAlive(col, row);
+            }
+        }
+    }
 }

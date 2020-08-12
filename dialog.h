@@ -62,7 +62,7 @@ private:
 
     void passGridToLogic();
 
-    void getGridFromLogid();
+    void paintGrid();
 
     void run();
 

@@ -4,7 +4,9 @@ struct cell
 {
     int aliveNeighbors;
     bool isAlive;
-    cell (int neighbors, bool alive):
-        aliveNeighbors(neighbors), isAlive(alive) {}
+    cell ():
+        aliveNeighbors(0),
+        isAlive(0)
+    {}
 };
 #endif // CELLSTRUCT_H

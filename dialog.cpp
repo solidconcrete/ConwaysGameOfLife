@@ -12,14 +12,15 @@ Dialog::Dialog(QWidget *parent)
     , ui(new Ui::Dialog)
 {
     ui->setupUi(this);
+
     g = grid(5, 5);
     isStopped = true;
     latency = 500;
 
-    qRegisterMetaType<QVector<int>>("QVectorMetat");
+    qRegisterMetaType<QVector<int>>("QVectorMeta");
 
-    std::thread th1 (&Dialog::run, this);
-    th1.detach();
+    std::thread thread (&Dialog::run, this);
+    thread.detach();
 
     model = new QStandardItemModel(5, 5, this);
     setUpModel();
@@ -39,15 +40,23 @@ Dialog::~Dialog()
 void Dialog::run()
 {
     bool localIsStopped = isStopped;
+
     while(1)
     {
         if (!localIsStopped)
         {
+            auto start = std::chrono::system_clock::now();
             mutex.lock();
             g.makeStep();
-            getGridFromLogid();
+            paintGrid();
             mutex.unlock();
-            std::this_thread::sleep_for(std::chrono::milliseconds(latency));
+            auto end = std::chrono::system_clock::now();
+            auto elapsed = end - start;
+            if (elapsed  < std::chrono::milliseconds(latency))
+            {
+                std::this_thread::sleep_for(std::chrono::milliseconds(latency) - elapsed);
+            }
+//            std::this_thread::sleep_for(std::chrono::milliseconds(latency));
         }
         localIsStopped = isStopped;
     }
@@ -71,7 +80,7 @@ void Dialog::on_SizePushButton_clicked()
     model->setColumnCount(width);
     model->setRowCount(height);
 
-    g.setSize(width, height);
+    g.changeSize(width, height);
     setUpModel();
 
     this->setFocus();
@@ -81,7 +90,7 @@ void Dialog::on_SizePushButton_clicked()
 //sets up a model so that newly added cells are marked as dead, but without killing living cells
 void Dialog::setUpModel()
 {
-    getGridFromLogid();
+    paintGrid();
     for (int col = 0; col < model->columnCount(); col++)
     {
         for (int row = 0; row < model->rowCount(); row++)
@@ -106,7 +115,7 @@ void Dialog::on_stepButton_clicked()
     if (isStopped)
     {
         g.makeStep();
-        getGridFromLogid();
+        paintGrid();
     }
     this->setFocus();
 }
@@ -137,7 +146,7 @@ void Dialog::keyPressEvent(QKeyEvent *event)
     if (event->key() == Qt::Key_Space && isStopped)
     {
         g.makeStep();
-        getGridFromLogid();
+        paintGrid();
         return;
     }
     if (event->key() == Qt::Key_Plus)
@@ -157,12 +166,12 @@ void Dialog::keyPressEvent(QKeyEvent *event)
 void Dialog::on_clearButton_clicked()
 {
     g.setEmpty();
-    getGridFromLogid();
+    paintGrid();
 
     this->setFocus();
 }
 
-void Dialog::getGridFromLogid()
+void Dialog::paintGrid()
 {
     std::vector<cell> cells = g.getGrid();
     if(model->columnCount() * model->rowCount() != (int)cells.size())
