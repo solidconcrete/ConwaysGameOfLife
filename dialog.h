@@ -6,8 +6,11 @@
 #include <QtGui>
 #include <QDebug>
 #include <chrono>
+#include <thread>
+#include <mutex>
 #include "delegate.h"
 #include "grid.h"
+
 QT_BEGIN_NAMESPACE
 namespace Ui { class Dialog; }
 QT_END_NAMESPACE
@@ -15,8 +18,6 @@ QT_END_NAMESPACE
 class Dialog : public QDialog
 {
     Q_OBJECT
-
-    friend class TestGui;
 
 public:
     Dialog(QWidget *parent = nullptr);
@@ -54,13 +55,9 @@ private:
 
     void setUpCellSize(int);
 
-    void setUpModel();
-
     void setUpGridSize();
 
     void keyPressEvent(QKeyEvent *event);
-
-    void passGridToLogic();
 
     void paintGrid();
 

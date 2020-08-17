@@ -5,7 +5,7 @@
 
 class grid
 {
-    friend class TestGui;
+    friend class testClass;
 
 public:
     grid(int w, int h);
@@ -16,7 +16,7 @@ public:
     void makeStep();
     void setCellAlive(int x, int y);
     void setCellDead(int x, int y);
-    void setEmpty();
+    void setGridEmpty();
 
 private:
 

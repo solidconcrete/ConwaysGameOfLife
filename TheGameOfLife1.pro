@@ -20,7 +20,7 @@ SOURCES += \
     grid.cpp \
     main.cpp \
     dialog.cpp \
-    testgui.cpp
+    testClass.cpp
 
 HEADERS += \
     cellStruct.h \

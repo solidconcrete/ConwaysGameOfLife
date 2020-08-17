@@ -1,8 +1,5 @@
 #include "grid.h"
 #include <QDebug>
-#include <thread>
-#include <chrono>
-#include <vector>
 
 grid::grid(int w, int h)
 {
@@ -19,7 +16,7 @@ grid::grid()
 {
 
 }
-void grid::setEmpty()
+void grid::setGridEmpty()
 {
     cellMap.assign(width * height, cell());
 }
@@ -41,6 +38,7 @@ void grid::setCellAlive(int x, int y)
         cellMap[cellCoordinates].isAlive = 1;
     }
 
+    //find offset, which we'll use to find neighbors
     int leftNeighbor, rightNeighbor, aboveNeighbor, belowNeighbor;
     if (x == 0)
     {
@@ -59,7 +57,6 @@ void grid::setCellAlive(int x, int y)
 
     if (y == 0)
     {
-//        aboveNeighbor = height * (width - 1);
         aboveNeighbor = height * width - (width - x) - x;
     }
     else
@@ -124,7 +121,6 @@ void grid::setCellDead(int x, int y)
 
     if (y == 0)
     {
-//        aboveNeighbor = height * (width - 1);
         aboveNeighbor = height * width - (width - x) - x;
     }
     else
@@ -202,30 +198,31 @@ void grid::changeSize(int newWidth, int newHeight)
         throw "Negative coordinates condition!";
     }
 
-    int widthToCheck;
-    int heightToCheck;
+    int smallerWidth;
+    int smallerHeight;
 
     if (newWidth < width)
     {
-        widthToCheck = newWidth;
+        smallerWidth = newWidth;
     }
-    else widthToCheck = width;
+    else smallerWidth = width;
     if (newHeight < height)
     {
-        heightToCheck = newHeight;
+        smallerHeight = newHeight;
     }
-    else heightToCheck = height;
+    else smallerHeight = height;
 
     int oldWidth = width;
 
     std::vector<cell> oldMap = cellMap;
     cellMap.assign(newWidth * newHeight, cell());
+
     this->width = newWidth;
     this->height = newHeight;
 
-    for(int row = 0; row < heightToCheck; row ++)
+    for(int row = 0; row < smallerHeight; row ++)
     {
-        for (int col = 0; col < widthToCheck; col ++)
+        for (int col = 0; col < smallerWidth; col ++)
         {
             if (oldMap[row * oldWidth + col].isAlive)
             {

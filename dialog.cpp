@@ -1,12 +1,6 @@
 #include "dialog.h"
 #include "ui_dialog.h"
-#include <QThread>
-#include <QString>
-#include <thread>
-#include <mutex>
-#include <chrono>
-#include "delegate.h"
-#include "grid.h"
+
 Dialog::Dialog(QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::Dialog)
@@ -22,12 +16,14 @@ Dialog::Dialog(QWidget *parent)
     std::thread thread (&Dialog::run, this);
     thread.detach();
 
+    //table set-up
     model = new QStandardItemModel(5, 5, this);
-    setUpModel();
     ui->tableView->setModel(model);
     myDelegate = new Delegate(this);
     ui->tableView->setItemDelegate(myDelegate);
     ui->tableView->setMouseTracking(true);
+
+    paintGrid();
 
 }
 
@@ -37,6 +33,7 @@ Dialog::~Dialog()
     delete ui;
 }
 
+//thread
 void Dialog::run()
 {
     bool localIsStopped = isStopped;
@@ -46,17 +43,20 @@ void Dialog::run()
         if (!localIsStopped)
         {
             auto start = std::chrono::system_clock::now();
+
             mutex.lock();
             g.makeStep();
-            paintGrid();
-            mutex.unlock();
+
             auto end = std::chrono::system_clock::now();
             auto elapsed = end - start;
+
             if (elapsed  < std::chrono::milliseconds(latency))
             {
                 std::this_thread::sleep_for(std::chrono::milliseconds(latency) - elapsed);
             }
-//            std::this_thread::sleep_for(std::chrono::milliseconds(latency));
+
+            paintGrid();
+            mutex.unlock();
         }
         localIsStopped = isStopped;
     }
@@ -69,39 +69,17 @@ void Dialog::on_SizePushButton_clicked()
     {
         return;
     }
-    QString labelText = "Width: ";
+
     int width = ui->XspinBox->value();
     int height = ui->YspinBox->value();
-    labelText.append(QString::number(width));
-    labelText.append(", Height: ");
-    labelText.append(QString::number(height));
-    ui->sizeLabel->setText(labelText);
 
     model->setColumnCount(width);
     model->setRowCount(height);
 
     g.changeSize(width, height);
-    setUpModel();
+    paintGrid();
 
     this->setFocus();
-
-}
-
-//sets up a model so that newly added cells are marked as dead, but without killing living cells
-void Dialog::setUpModel()
-{
-    paintGrid();
-    for (int col = 0; col < model->columnCount(); col++)
-    {
-        for (int row = 0; row < model->rowCount(); row++)
-        {
-            QModelIndex index = model->index(row, col, QModelIndex());
-            if (index.data() != 1)
-            {
-                model->setData(index, 0);
-            }
-        }
-    }
 }
 
 void Dialog::setUpCellSize(int cellSize)
@@ -165,7 +143,12 @@ void Dialog::keyPressEvent(QKeyEvent *event)
 
 void Dialog::on_clearButton_clicked()
 {
-    g.setEmpty();
+    if (!isStopped)
+    {
+        return;
+    }
+
+    g.setGridEmpty();
     paintGrid();
 
     this->setFocus();
@@ -178,9 +161,10 @@ void Dialog::paintGrid()
     {
         throw "Grid dimensions do not match with grid in memory";
     }
+
     for (int row = 0; row < model->rowCount(); row++)
     {
-        for(int col = 0; col < model->columnCount(); col ++)
+        for(int col = 0; col < model->columnCount(); col++)
         {
             QModelIndex cellIndex = model->index(row, col, QModelIndex());
             model->setData(cellIndex, cells[row * model->columnCount() + col].isAlive);
@@ -190,7 +174,6 @@ void Dialog::paintGrid()
 
 void Dialog::on_tableView_entered(const QModelIndex &index)
 {
-//    QApplication::keyboardModifiers().testFlag(Qt::ControlModifier
     if (QApplication::mouseButtons().testFlag(Qt::LeftButton) && isStopped)
     {
         model->setData(index, 1);
